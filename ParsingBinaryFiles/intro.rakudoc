@@ -38,7 +38,7 @@ To give concrete examples, a simple MIDI file is used.
 The actual file is aailable as
 L<https://github.com/kjpyr/blog/ParsingBinaryFiles/thestar.midi>.
 This is a ersion of I<Twinkle, Twinkle Little Star>.
-It was generated using L<https://lilypond.org|Lilypond>.
+It was generated using L<Lilypond|https://lilypond.org>.
 The lilypond source (as well as a generated pdf score)
 is available from the same place as the midi file.
 
