@@ -19,6 +19,8 @@ For example, given a file name in `$file`:
 
 will read the first 512 bytes of the file into `$data`, and ordinary `Blob` methods can be used to access the data.
 
+This is particularly useful when the file can be read sequentially, such as the MIDI example being used here. Some binary file formats howeer require random access to the file. You will then need to intersperse the `read` calls with calls to `seek`. It also needs advance knowledge of the size of structures. Alternatively you will need to add an extra layer to read blocks, and then split them into the desired structures. You will often get away with reading a few bytes containing length information and then readi9ng the rest of the structure.
+
 ### mmap
 
 On Unix-like systems including Linux, the `mmap` system call can be used to map the contents of a file directly into the memory space of your program. While `mmap` is not a standard part of Raku, t can easily be used using the NativeCall interface as follows (given a file name in `$file`):
@@ -46,4 +48,20 @@ On Unix-like systems including Linux, the `mmap` system call can be used to map 
                    );
 
 `$data` now contains a `CArray` of `uint8` bytes which you can access using normal array notation such as `$data[1234]`.
+
+Using `mmap` has the advantage that you can access the data randomly without using any special logic. The work is all pushed out to the operating system.
+
+The main disadvantage is that `CArray`s are very basic objects. None of the useful `Raku` methods are going to work on them. It will thus be necessary to read the data byte by byte, and combine those bytes into useful structures.
+
+The [NativeHelpers::Array](https://raku.land/zef:jonathanstowe/NativeHelpers::Array) module may be of help in converting parts of the `CArray` into `Blob`s, for which many more useful methods are available. Unfortunately the current version of this module will only convert the beginning of a `CArray` into a Buf, and so is less useful than otherwise might be the case,
+
+It might be easier to write your own simple routine to convert parts of a `CArray` to a `Buf`. Code like
+
+    sub carray-to-buf(CArray $carray, Int $start, Int $length --> Buf) {
+      my $buf = Buf.new;
+      $buf.push: $carray[$start + $_] for ^$length;
+      $buf;
+    }
+
+should do the job.
 
