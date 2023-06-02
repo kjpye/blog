@@ -1,8 +1,10 @@
 Parsing Binary Files
 ====================
 
-Part I— Introduction This is the start of a series of articles about how to parse the contents of a binary file into a Raku data structure.
--------------------------------------------------------------------------------------------------------------------------------------------
+Part I— Introduction
+--------------------
+
+This is the start of a series of articles about how to parse the contents of a binary file into a Raku data structure.
 
 The following parts have been written:
 
@@ -27,4 +29,6 @@ The following parts are yet to be written:
 8. Binary regular expressions
 
 Note that the last two sections cannot be completed until Raku has the necessary facilities.
+
+### Examples
 
