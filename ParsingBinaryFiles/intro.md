@@ -32,3 +32,5 @@ Note that the last two sections cannot be completed until Raku has the necessary
 
 ### Examples
 
+To give concrete examples, a simple MIDI file is used. The actual file is aailable as [https://github.com/kjpyr/blog/ParsingBinaryFiles/thestar.midi](https://github.com/kjpyr/blog/ParsingBinaryFiles/thestar.midi). This is a ersion of *Twinkle, Twinkle Little Star*. It was generated using [https://lilypond.org](Lilypond). The lilypond source (as well as a generated pdf score) is available from the same place as the midi file.
+
