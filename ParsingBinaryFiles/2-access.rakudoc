@@ -27,7 +27,7 @@ methods can be used to access the data.
 
 This is particularly useful when the file can be read
 sequentially, such as the MIDI example being used here.
-Some binary file formats howeer require random access
+Some binary file formats however require random access
 to the file. You will then need to intersperse the
 C<read> calls with calls to C<seek>.
 It also needs advance knowledge of the size of structures.

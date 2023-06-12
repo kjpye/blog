@@ -19,7 +19,7 @@ For example, given a file name in `$file`:
 
 will read the first 512 bytes of the file into `$data`, and ordinary `Blob` methods can be used to access the data.
 
-This is particularly useful when the file can be read sequentially, such as the MIDI example being used here. Some binary file formats howeer require random access to the file. You will then need to intersperse the `read` calls with calls to `seek`. It also needs advance knowledge of the size of structures. Alternatively you will need to add an extra layer to read blocks, and then split them into the desired structures. You will often get away with reading a few bytes containing length information and then readi9ng the rest of the structure.
+This is particularly useful when the file can be read sequentially, such as the MIDI example being used here. Some binary file formats however require random access to the file. You will then need to intersperse the `read` calls with calls to `seek`. It also needs advance knowledge of the size of structures. Alternatively you will need to add an extra layer to read blocks, and then split them into the desired structures. You will often get away with reading a few bytes containing length information and then readi9ng the rest of the structure.
 
 ### mmap
 

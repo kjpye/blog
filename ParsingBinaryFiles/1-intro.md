@@ -1,8 +1,8 @@
 Parsing Binary Files
 ====================
 
-Part I— Introduction
---------------------
+Part I—Introduction
+-------------------
 
 This is the start of a series of articles about how to parse the contents of a binary file into a Raku data structure.
 
@@ -24,9 +24,11 @@ The following parts are yet to be written:
 
 6. Binary::Structured
 
-7. Reading data from CArrays
+7. Regular expressions
 
-8. Binary regular expressions
+8. Reading data from CArrays
+
+9. Binary regular expressions
 
 Note that the last two sections cannot be completed until Raku has the necessary facilities.
 
