@@ -8,15 +8,15 @@ Part VII—Using ordinary regexes
 
 Raku regexes are designed for processing text. They are very good at this. Some work has been done in implementing binary regular expressions, but this work is currently on hold. It will one day form the basis of Part IX.
 
-However, by misusing rehexes, it is possible to parse some binary files—notably those which contain a stream of data like our `MIDI` file. They are less useful for arsing files which contain pointers into the file. It might be possible to misuse them for handling parts of other binary files.
+However, by misusing regexes, it is possible to parse some binary files—notably those which contain a stream of data like our `MIDI` file. They are less useful for parsing files which contain pointers into the file. It might be possible to misuse them for handling parts of other binary files.
 
 ### Getting the binary data into text form
 
-Unicode text files are inherently formed of multi-byte characters, and there is no guarantee that decoding a string of bytes and then re-encoding it using the same encoding will generate the same stream of bytes as we started with. For this application we need to be able to guarantee that we can treat each individual byte a s an entity, independent of the bytes around it.
+Unicode text files are inherently formed of multi-byte characters, and there is no guarantee that decoding a string of bytes and then re-encoding it using the same encoding will generate the same stream of bytes as we started with. For this application we need to be able to guarantee that we can treat each individual byte as an entity, independent of the bytes around it.
 
 The usual solution for handling text in a reversible manner, i.e. being able to re-encode the stream and return to the original bytes, is to use the `utf8-c8` encoding. However this won't work in this application, as a sequence of bytes in the input might constitute a valid UTF8 Unicode codepoint, and that will become a single character in the text stream, making it difficult to treat the individual bytes separately.
 
-There is, however, an encoding in which each individual byte corresponds to a single character, and which is reversible—`latin1`. (Any other similar encoding would also work.) Using the `latin1` encoding we can convert an arbitrary streamk of bytes into a Raku string, and use regexes to match each individual byte.
+There is, however, an encoding in which each individual byte corresponds to a single character, and which is reversible—`latin1`. (Any other similar encoding would also work.) Using the `latin1` encoding we can convert an arbitrary stream of bytes into a Raku string, and use regexes to match each individual byte.
 
 Thus we need code like
 
@@ -28,9 +28,9 @@ We can then start applying regexes to the string.
 
 We need a way in a grammar to handle individual bytes (of the original stream of bytes), and get at the values.
 
-A grammar which can handle our example MIDI file is given in [https://github.com/kjpye/blogs/blog/ParsingBinaryFiles/binregex.raku](https://github.com/kjpye/blogs/blog/ParsingBinaryFiles/binregex.raku). Be aware that this is not a complete implementation of a MIDI parser, but will handle out example file. It also does not contain the code to create useful structures, but just prints out the contents of the file.
+A grammar which can handle our example MIDI file is given in [https://github.com/kjpye/blogs/blog/ParsingBinaryFiles/binregex.raku](https://github.com/kjpye/blogs/blog/ParsingBinaryFiles/binregex.raku). Be aware that this is not a complete implementation of a MIDI parser, but will handle our example file. It also does not contain the code to create useful structures, but just prints out the contents of the file.
 
-We will not go through every line of the file, but juist look at some pertinent parts.
+We will not go through every line of the file, but just look at some pertinent parts.
 
 The grammar starts
 
@@ -56,7 +56,7 @@ We also need to be able to match specific bytes. This could be done with regexes
 
     token specificbyte { <byte> <?{$<byte>.made == 0xBD}> }
 
-but that would get very tedious (and error-prone) very quickly. Instead, we have 256 declarations of the form
+but that would get very tedious (and error-prone, and probably slow) very quickly. Instead, we have 256 declarations of the form
 
     my token byte17 { \x17                         { make 0x17; } }
     my token byte28 { \c[LEFT PARENTHESIS]         { make 0x28; } }
@@ -77,5 +77,19 @@ Where there are ASCII characters we want to match, we can use them directly—th
 
 In binary files we often have counted fields. The way we have handled them here is just to match the entire field, and then use a particular regex to match the contents. This is necessary because later versions of the Midi specification might increase the size of some fields, and this would be difficult to match with a simple regex.
 
-For example, the tempo command (`FF 51 02 xx yy`)
+For example, the tempo command (`FF 51 03 xx yy zz`). This is recognised with the rule
+
+    { <byteFF> <byte51> $<count>=<byte> $<bytes> = .**{$<count>.made} }
+
+after which the variable `$<bytes>` contains the (three in this case) bytes of the argument(s). (If this were used to process a theoretical future version of Midi, there might be more than three bytes. While we might not understand those bytes we will skip over them correctly.)
+
+Note that we don't yet use the `.made` attribute of the bytes. We still need them as a string to apply the next regex.
+
+The action for that rule will process the arguments using the `<tempo> ` rule:
+
+    { Midi.parse(~$<bytes>, :rule('tempo')); }
+
+which in this case just extracts and prints the relevant information:
+
+    token tempo { <uint24> { say sprintf "tempo: %d μs/♩", $<uint24>.made; } }
 
