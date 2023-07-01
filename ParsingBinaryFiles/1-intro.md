@@ -14,11 +14,11 @@ The following parts are available in draft form:
 
 2. [Accessing your data](https://github.com/kjpye/blog/blob/main/ParsingBinaryFiles/2-access.md)
 
+3. [Manually reading the bytes](https://github.com/kjpye/blog/blob/main/ParsingBinaryFiles/3-manual.md)
+
 7. [Regular expressions](https://github.com/kjpye/blog/blob/main/ParsingBinaryFiles/7-regex.md)
 
 The following parts are yet to be written:
-
-3. [Manually reading the bytes](https://github.com/kjpye/blog/blob/main/ParsingBinaryFiles/3-manual.md)
 
 4. [Unpacking your data (using unpack)](https://github.com/kjpye/blog/blob/main/ParsingBinaryFiles/4-unpack.md)
 
@@ -70,5 +70,5 @@ Note that
 
 A MIDI track is stored in a chunk, with each event in the track (often a not-on or note-off event, but there are other types) preceded by a variable-length integer indicating the delta time since the previous event.
 
-[dBase III (Luis Uceta)](https://dev.to/uzluisf/dbase-parsing-a-binary-file-format-with-raku-2fm6)
+Luis Uceta has recently [blogged](https://dev.to/uzluisf/dbase-parsing-a-binary-file-format-with-raku-2fm6) about using Raku to parse a dBase III file. Like a MIDI file, this is a streaming type file format.
 
