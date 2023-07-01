@@ -4,4 +4,134 @@
 
 =head2 Part III—Manually reading the data
 
+The most obvious, although not necessarily the easiest,
+way to read values from a binary file is to read each byte,
+and reassemble multi-byte values by hand.
+While there are easier ways when standard values like 32-bit
+integers are involved, in a streaming file there are often
+values which don't correspond to standard storage.
+In our MIDI file example, there are 24-bit unsigned integers,
+and variable length integers. There is no way to process
+these values without handling the bytes individually.
+
+=head3 Reading the chunk header
+
+Let us look firstly at the start of the MIDI file:
+
+  000000 4d 54 68 64 00 00 00 06 00 01 00 04 01 80        >MThd..........<
+
+(which is the header we saw in Part I).
+
+We might start with code like
+
+  my $file = 'thestar.midi'.IO.open(:r, :bin);
+  my $chunk-header = $file.read(8);
+
+which will read the first eight bytes of the file,
+containing the chunk type, and the length of the chunk data.
+(Note that I'm omitting all error handling code.)
+
+We can then read the bytes into appropriate variables:
+
+  my $chunktype   = $chunk-header[0].chr ~
+                    $chunk-header[1].chr ~
+                    $chunk-header[2].chr ~
+                    $chunk-header[3].chr;
+  my $chunklength = ($chunk-header[4] +< 24) +|
+                    ($chunk-header[5] +< 16) +|
+                    ($chunk-header[6] +<  8) +|
+                     $chunk-header[7];
+
+=head3 Reading the header data
+
+Now that we have the length of the data, we can read it:
+
+  my $chunkdata = $file.read($chunklength);
+
+We can then handle the data within the chunk. In this case we know it's going to be a header:
+
+  my $format;
+  my $ntrks;
+  my $division;
+  if $chunktype eq 'MThd' {
+    $format   = ($chunktype[0] +< 8) +|
+                 $chunktype[1];
+    $ntrks    = ($chunktype[2] +< 8) +|
+                 $chunktype[3];
+    $division = ($chunktype[4] +< 8) +|
+                 $chunktype[5];
+  }
+
+This gives us the information we need to be able to correctly interpret
+the remainder of the file.
+
+Note that, in practice, we would define functions to get the values
+of the variables, perhaps like this:
+
+  # MIDI strings are ASCII only
+  sub get-string(Blob $buffer, Int $offset, Int $length -> String) {
+    my $s = '';
+    for ^$length --> $i {
+      $s ~= $buffer[$offset + $i].chr;
+    }
+    $s;
+  }
+
+  sub get-uint16(Blob $buffer, Int $offset -> Int) {
+  (
+    $buffer[$offset] +< 8) +| $buffer[$offset + 1];
+  }
+
+  sub get-uint32(Blob $buffer, Int $offset -> Int) {
+    (get-uint16[$buffer, $offset) +< 16) + get-uint16($buffer, $offset + 2);
+  }
+
+and our code so far becomes a little more understandable:
+
+  my $chunktype   = get-string($chunk-header, 0);
+  my $chunklength = get-uint32($chunk-header, 4)
+
+and
+
+  $format   = get-uint16($chunk-data, 0);
+  $ntrks    = get-uint16($chunk-data, 2);
+  $division = get-uint16($chunk-data, 4);
+
+As aside, the format field can contain only the values 0, 1, and 2.
+Our example file is format 1, but it makes little difference
+to how we process the file.
+
+C<ntrks> is the number of tracks in the file.
+We can either read that many tracks, or just keep
+reading until we reach the end of the file.
+
+C<division> relates how times within the tracks are interpreted.
+When the most-significant bit is clear (as in our example file)
+then the field specifies the number of midi-ticks (the units
+used within the track) per quarter note. When combines with
+tempo information within the tracks this will give the actual
+times when notes should be played.
+When the most-significant bit is set the times within the
+tracks are in a form of absolute time related to the frame-rate.
+This would be used for MIDI files associated with video sources.
+
+=head3 Reading the tracks
+
+We can continue by reading the tracks.
+We start by reading the chunk header, as we did before:
+
+  $chunk-header = $file.read(8);
+
+Note that we don't need to seek anywhere in the file;
+the track data immediately follow on from the header information.
+
+  $chunktype   = get-string($chunk-header, 0);
+  $chunklength = get-uint32($chunk-header, 4);
+  $chunkdata   = $file.read($chunklength);
+
+  if $chunktype eq 'MTrk' {
+    # process the track
+  }
+
+
 =end pod
