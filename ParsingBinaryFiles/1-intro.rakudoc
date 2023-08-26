@@ -59,8 +59,8 @@ integers up to 2²⁹.
 
 =head4 Structures and pointers
 
-Some binary files contain data structures which look ver
-y much like in-memory structures including pointers to
+Some binary files contain data structures which look very
+much like in-memory structures including pointers to
 other structures and so on. (Early versions of Microsoft Word
 looked like this.) Reading files like this can involve
 jumping around a lot within the file, and in this case
@@ -118,7 +118,7 @@ Thus the length is given as 6, whereas the header is
 actually 14 bytes long.
 
 A MIDI track is stored in a chunk, with each event
-in the track (often a not-on or note-off event, but
+in the track (often a note-on or note-off event, but
 there are other types) preceded by a variable-length
 integer indicating the delta time since the previous event.
 

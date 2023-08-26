@@ -88,7 +88,7 @@ of the variables, perhaps like this:
 
 and our code so far becomes a little more understandable:
 
-  my $chunktype   = get-string($chunk-header, 0);
+  my $chunktype   = get-string($chunk-header, 0, 4);
   my $chunklength = get-uint32($chunk-header, 4)
 
 and
@@ -97,7 +97,7 @@ and
   $ntrks    = get-uint16($chunk-data, 2);
   $division = get-uint16($chunk-data, 4);
 
-As aside, the format field can contain only the values 0, 1, and 2.
+As an aside, the format field can contain only the values 0, 1, and 2.
 Our example file is format 1, but it makes little difference
 to how we process the file.
 
@@ -133,7 +133,7 @@ the track data immediately follow on from the header information.
     # process the track
   }
 
-The first channel of our example file looks like this:
+The first track of our example file looks like this:
 
   000000                                           4d 54  >              MT<
   000010 72 6b 00 00 00 6f 00 ff 03 1d 54 77 69 6e 6b 6c  >rk...o....Twinkl<
@@ -146,7 +146,7 @@ The first channel of our example file looks like this:
   000080 90 00 ff 2f 00                                   >.../.           <
 
 The format of the track, after the 8 bytes of the standard chunk header,
-is number of commands, each preceded by a variable-length integer
+is a number of commands, each preceded by a variable-length integer
 representing the time delay (the "delta-time") from the previous command.
 
 A variable-length integer consists of zero to three bytes
@@ -169,7 +169,8 @@ Let us define a function which can read variable-length integers:
 Here we have assumed that the MIDI file is well-formed,
 and don't bother to check that there are no more than four bytes.
 Because this function reads a variable number of bytes
-we need some way to indicate how many were read;
+we need some way to indicate how many bytes have been read so
+that we know where to start reading the next information;
 in this case we have directly updated the offset into
 the chunk.
 
@@ -177,7 +178,7 @@ the chunk.
 
 The first byte of the track is C<00>,
 representing a delta-time of 0.
-This the event occurs right at the beginning of the track.
+Thus the event occurs right at the beginning of the track.
 This is followed by C<ff>, representing a meta-event.
 The following byte (C<03>) specifies the meta event
 as a sequence or track name, and is followed by a counted ASCII string.
@@ -217,9 +218,9 @@ might be used to parse this event:
 
 Other similar meta events are C<01> ("text event"),
 C<02> ("copyright notice"),
-C<0x04> ("instrument name"),
+C<04> ("instrument name"),
 and C<05> ("lyric").
-Not all of these are used in the axample file.
+Not all of these are used in the example file.
 
 =head4 Other meta-events
 
@@ -294,8 +295,8 @@ This is a tempo meta-event, exactly the same as the first,
 except that this time the delta-time is C<81 90 00>
 which is a delta-time of 18,432.
 If we divide this by the C<divisions> value from the midi header (384)
-we get 48, which is the number of quarter notes until the tim
-e this tempo change applies.
+we get 48, which is the number of quarter notes until the time
+this tempo change applies.
 In this case, the length of each verse.
 This tempo event arises because the lilypond source specifies a repeat,
 and the tempo mark is inside the repeat.
@@ -303,7 +304,10 @@ It could be omitted without having any effect on the output
 from a midi device.
 (The delta time of the next event would need to be increased to compensate.)
 
-This leaves only C<81 90 00 ff 2f 00> in this track. This is an event with a delta-time of 18432 again, a meta-event (C<ff>) a meta-event type of CC<2f>, and a length field of 0.
+This leaves only C<81 90 00 ff 2f 00> in this track.
+This is an event with a delta-time of 18432 again,
+a meta-event (C<ff>) a meta-event type of CC<2f>,
+and a length field of 0.
 
 We thus add the code:
 
@@ -351,8 +355,12 @@ However the first few events will suffice. This track starts:
   000140 90 41 00 00 90 45 00 00 90 41 5a 00 90 45 5a 83  >.A...E...AZ..EZ.<
   000150 00 90 41 00 00 90 45 00 00 90 3e 5a 00 90 43 5a  >..A...E...>Z..CZ<
   000160 83 00 90 3e 00 00 90 43 00 00 90 40 5a 00 90 43  >...>...C...@Z..C<
+         ...
 
-We already have code to read in the chunk, noting that this time there is 0x57e (1406) bytes of track data. This is followed by another sequence/track name meta event, and then another meta-event we haven't seen before:
+We already have code to read in the chunk,
+noting that this time there is 0x57e (1406) bytes of track data.
+This is followed by another sequence/track name meta event,
+and then another meta-event we haven't seen before:
 
    00 ff 59 02 ff 00
 
@@ -371,6 +379,7 @@ So we need a litle more code:
     when 0x58 { ... }
     when 0x51 { ... }
     when 0x27 { ... }
+    when 0x59 {
       my $length = $buffer[$offset++];
       my $sharps = $buffer[$offset];
       $sharps   -= 256 if $sharps +&0x80; # negative if msb set
@@ -409,8 +418,8 @@ They might be used, for example, for separate instruments.
 The commands we haven't seen yet combine the command and a channel number
 into a single byte.
 There are seven commands (C<8> to C<E>) and sixteen channels (C<0> to C<f>).
-The first nybble of the command byte is the command
-, and the second nybble is the channel.
+The first nybble of the command byte is the command,
+and the second nybble is the channel.
 
 The seven commands are
 C<8>—note off,
@@ -428,13 +437,13 @@ which we now recognise as a note on command on channel 0.
 A note on command has two arguments; a note number (0-127) and a velocity.
 Note number 60 is middle-C,
 and each succesive note is a semi-tone higher
-than the rpevious number.
+than the previous number.
 The velocity, also in the range 0-127,
 indicates how hard the key was hit on a piano for example,
 and will have a direct effect on the loudness of the sound.
 A velocity of 0 is equivalent to a note off command.
 (Using a velocity of 0 on a note on command allows
-a long sequence of note on and note off without any
+a long sequence of note on and note off commands without any
 command bytes if using running status.)
 
 We can eventually see that our current command (C<00 90 41 5a>)
@@ -487,7 +496,5 @@ We need to modify some of our overall structure:
       default { ... }
     }
   }
-
-
 
 =end pod

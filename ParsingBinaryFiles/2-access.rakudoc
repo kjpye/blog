@@ -41,7 +41,7 @@ length information and then readi9ng the rest of the structure.
 On Unix-like systems including Linux, the C<mmap> system call can
 be used to map the contents of a file directly into the memory
 space of your program. While C<mmap> is not a standard part of
-Raku, t can easily be used using the NativeCall interface as
+Raku, it can easily be used using the NativeCall interface as
 follows (given a file name in C<$file>):
 
   use NativeCall;
@@ -95,6 +95,6 @@ convert parts of a C<CArray> to a C<Buf>. Code like
     $buf;
   }
 
-should do the job.
+should do the job (and is how C<NativeHelpers::Array> is implemented anyway).
 
 =end pod

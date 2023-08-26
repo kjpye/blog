@@ -6,7 +6,7 @@ Part VII—Using ordinary regexes
 
 **Please do not try to implement the techniques discussed in this part. It is only included as an exercise in how far it is possible to push Raku features beyond their design parameters.**
 
-Raku regexes are designed for processing text. They are very good at this. Some work has been done in implementing binary regular expressions, but this work is currently on hold. It will one day form the basis of Part IX.
+Raku regexes are designed for processing text. They are very good at this. Some work has been done in implementing binary regular expressions, but this work is currently on hold. It will one day form the basis of Part IX of this blog series.
 
 However, by misusing regexes, it is possible to parse some binary files—notably those which contain a stream of data like our `MIDI` file. They are less useful for parsing files which contain pointers into the file. It might be possible to misuse them for handling parts of other binary files.
 

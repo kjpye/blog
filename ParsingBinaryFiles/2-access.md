@@ -23,7 +23,7 @@ This is particularly useful when the file can be read sequentially, such as the 
 
 ### mmap
 
-On Unix-like systems including Linux, the `mmap` system call can be used to map the contents of a file directly into the memory space of your program. While `mmap` is not a standard part of Raku, t can easily be used using the NativeCall interface as follows (given a file name in `$file`):
+On Unix-like systems including Linux, the `mmap` system call can be used to map the contents of a file directly into the memory space of your program. While `mmap` is not a standard part of Raku, it can easily be used using the NativeCall interface as follows (given a file name in `$file`):
 
     use NativeCall;
 
@@ -63,5 +63,5 @@ It might be easier to write your own simple routine to convert parts of a `CArra
       $buf;
     }
 
-should do the job.
+should do the job (and is how `NativeHelpers::Array` is implemented anyway).
 

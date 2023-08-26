@@ -76,7 +76,7 @@ Note that, in practice, we would define functions to get the values of the varia
 
 and our code so far becomes a little more understandable:
 
-    my $chunktype   = get-string($chunk-header, 0);
+    my $chunktype   = get-string($chunk-header, 0, 4);
     my $chunklength = get-uint32($chunk-header, 4)
 
 and
@@ -85,7 +85,7 @@ and
     $ntrks    = get-uint16($chunk-data, 2);
     $division = get-uint16($chunk-data, 4);
 
-As aside, the format field can contain only the values 0, 1, and 2. Our example file is format 1, but it makes little difference to how we process the file.
+As an aside, the format field can contain only the values 0, 1, and 2. Our example file is format 1, but it makes little difference to how we process the file.
 
 `ntrks` is the number of tracks in the file. We can either read that many tracks, or just keep reading until we reach the end of the file.
 
@@ -107,7 +107,7 @@ Note that we don't need to seek anywhere in the file; the track data immediately
       # process the track
     }
 
-The first channel of our example file looks like this:
+The first track of our example file looks like this:
 
     000000                                           4d 54  >              MT<
     000010 72 6b 00 00 00 6f 00 ff 03 1d 54 77 69 6e 6b 6c  >rk...o....Twinkl<
@@ -119,7 +119,7 @@ The first channel of our example file looks like this:
     000070 51 03 09 27 c0 81 90 00 ff 58 04 02 02 18 08 81  >Q..'.....X......<
     000080 90 00 ff 2f 00                                   >.../.           <
 
-The format of the track, after the 8 bytes of the standard chunk header, is number of commands, each preceded by a variable-length integer representing the time delay (the "delta-time") from the previous command.
+The format of the track, after the 8 bytes of the standard chunk header, is a number of commands, each preceded by a variable-length integer representing the time delay (the "delta-time") from the previous command.
 
 A variable-length integer consists of zero to three bytes with the most-significant bit set, followed by one byte with the most-significant bit clear. The integer is formed by taking the least-significant 7 bits of each byte; the first byte is the most significant. The resultant number is a maximum of 28 bits (unsigned).
 
@@ -133,11 +133,11 @@ Let us define a function which can read variable-length integers:
       } until $buffer[$offset++] +& 0x80 == 0;
     }
 
-Here we have assumed that the MIDI file is well-formed, and don't bother to check that there are no more than four bytes. Because this function reads a variable number of bytes we need some way to indicate how many were read; in this case we have directly updated the offset into the chunk.
+Here we have assumed that the MIDI file is well-formed, and don't bother to check that there are no more than four bytes. Because this function reads a variable number of bytes we need some way to indicate how many bytes have been read so that we know where to start reading the next information; in this case we have directly updated the offset into the chunk.
 
 #### Text events
 
-The first byte of the track is `00`, representing a delta-time of 0. This the event occurs right at the beginning of the track. This is followed by `ff`, representing a meta-event. The following byte (`03`) specifies the meta event as a sequence or track name, and is followed by a counted ASCII string. Thus the full event is
+The first byte of the track is `00`, representing a delta-time of 0. Thus the event occurs right at the beginning of the track. This is followed by `ff`, representing a meta-event. The following byte (`03`) specifies the meta event as a sequence or track name, and is followed by a counted ASCII string. Thus the full event is
 
     000010                   00 ff 03 1d 54 77 69 6e 6b 6c  >      ....Twinkl<
     000020 65 2c 20 54 77 69 6e 6b 6c 65 2c 20 4c 69 74 74  >e, Twinkle, Litt<
@@ -170,7 +170,7 @@ Using functions we have already defined, the following code might be used to par
       }
     }
 
-Other similar meta events are `01` ("text event"), `02` ("copyright notice"), `0x04` ("instrument name"), and `05` ("lyric"). Not all of these are used in the axample file.
+Other similar meta events are `01` ("text event"), `02` ("copyright notice"), `04` ("instrument name"), and `05` ("lyric"). Not all of these are used in the example file.
 
 #### Other meta-events
 
@@ -218,7 +218,7 @@ We add the following code:
       }
     }
 
-The next event is a familiar one: `81 90 00 ff 58 04 02 02 18 08`. This is a tempo meta-event, exactly the same as the first, except that this time the delta-time is `81 90 00` which is a delta-time of 18,432. If we divide this by the `divisions` value from the midi header (384) we get 48, which is the number of quarter notes until the tim e this tempo change applies. In this case, the length of each verse. This tempo event arises because the lilypond source specifies a repeat, and the tempo mark is inside the repeat. It could be omitted without having any effect on the output from a midi device. (The delta time of the next event would need to be increased to compensate.)
+The next event is a familiar one: `81 90 00 ff 58 04 02 02 18 08`. This is a tempo meta-event, exactly the same as the first, except that this time the delta-time is `81 90 00` which is a delta-time of 18,432. If we divide this by the `divisions` value from the midi header (384) we get 48, which is the number of quarter notes until the time this tempo change applies. In this case, the length of each verse. This tempo event arises because the lilypond source specifies a repeat, and the tempo mark is inside the repeat. It could be omitted without having any effect on the output from a midi device. (The delta time of the next event would need to be increased to compensate.)
 
 This leaves only `81 90 00 ff 2f 00` in this track. This is an event with a delta-time of 18432 again, a meta-event (`ff`) a meta-event type of C`2f`, and a length field of 0.
 
@@ -258,6 +258,7 @@ Immediately following the first track, is the second! We won't examine every byt
     000140 90 41 00 00 90 45 00 00 90 41 5a 00 90 45 5a 83  >.A...E...AZ..EZ.<
     000150 00 90 41 00 00 90 45 00 00 90 3e 5a 00 90 43 5a  >..A...E...>Z..CZ<
     000160 83 00 90 3e 00 00 90 43 00 00 90 40 5a 00 90 43  >...>...C...@Z..C<
+           ...
 
 We already have code to read in the chunk, noting that this time there is 0x57e (1406) bytes of track data. This is followed by another sequence/track name meta event, and then another meta-event we haven't seen before:
 
@@ -272,6 +273,7 @@ So we need a litle more code:
       when 0x58 { ... }
       when 0x51 { ... }
       when 0x27 { ... }
+      when 0x59 {
         my $length = $buffer[$offset++];
         my $sharps = $buffer[$offset];
         $sharps   -= 256 if $sharps +&0x80; # negative if msb set
@@ -293,11 +295,11 @@ Up to this point, every event has had a command byte of `ff`. There are other me
 
 If the byte following the delta-time has the most significant bit clear, then it is not a new command. When this occurs, the previous command in the range `80` to `ef` is implied. This is known as running status, and allows a long sequence of, for example, note on commands to be specified while saving a byte for each note.
 
-Midi can handle 16 different channels. They might be used, for example, for separate instruments. The commands we haven't seen yet combine the command and a channel number into a single byte. There are seven commands (`8` to `E`) and sixteen channels (`0` to `f`). The first nybble of the command byte is the command , and the second nybble is the channel.
+Midi can handle 16 different channels. They might be used, for example, for separate instruments. The commands we haven't seen yet combine the command and a channel number into a single byte. There are seven commands (`8` to `E`) and sixteen channels (`0` to `f`). The first nybble of the command byte is the command, and the second nybble is the channel.
 
 The seven commands are `8`—note off, `9`—note on, `A`—poly key pressure, `B`—control change. `C`—program change, `D`—channel pressure, `E`—pitch bend. Most of them aren't used in the example file.
 
-So, getting back to our latest event, we have a delta-time of 0, and a command byte of `90`, which we now recognise as a note on command on channel 0. A note on command has two arguments; a note number (0-127) and a velocity. Note number 60 is middle-C, and each succesive note is a semi-tone higher than the rpevious number. The velocity, also in the range 0-127, indicates how hard the key was hit on a piano for example, and will have a direct effect on the loudness of the sound. A velocity of 0 is equivalent to a note off command. (Using a velocity of 0 on a note on command allows a long sequence of note on and note off without any command bytes if using running status.)
+So, getting back to our latest event, we have a delta-time of 0, and a command byte of `90`, which we now recognise as a note on command on channel 0. A note on command has two arguments; a note number (0-127) and a velocity. Note number 60 is middle-C, and each succesive note is a semi-tone higher than the previous number. The velocity, also in the range 0-127, indicates how hard the key was hit on a piano for example, and will have a direct effect on the loudness of the sound. A velocity of 0 is equivalent to a note off command. (Using a velocity of 0 on a note on command allows a long sequence of note on and note off commands without any command bytes if using running status.)
 
 We can eventually see that our current command (`00 90 41 5a`) has a delta time of 0 (so the note will be played immediately the midi file is started), a note on on channel 0, playing note 0x41 (65—the F above middle-C) with a velocity of 0x5a—probably fairly loud; its certainly more than half way up the volume scale.
 

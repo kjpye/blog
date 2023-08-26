@@ -12,7 +12,7 @@ Raku regexes are designed for processing text.
 They are very good at this.
 Some work has been done in implementing binary regular expressions,
 but this work is currently on hold.
-It will one day form the basis of Part IX.
+It will one day form the basis of Part IX of this blog series.
 
 However, by misusing regexes, it is possible to parse
 some binary files—notably those which contain a stream
@@ -147,6 +147,5 @@ The action for that rule will process the arguments using the C< <tempo> > rule:
 which in this case just extracts and prints the relevant information:
 
     token tempo { <uint24> { say sprintf "tempo: %d μs/♩", $<uint24>.made; } }
-
 
 =end pod

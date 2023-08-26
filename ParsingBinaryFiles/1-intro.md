@@ -44,7 +44,7 @@ Files of this type are sometimes optimised for space, and numbers often appear i
 
 #### Structures and pointers
 
-Some binary files contain data structures which look ver y much like in-memory structures including pointers to other structures and so on. (Early versions of Microsoft Word looked like this.) Reading files like this can involve jumping around a lot within the file, and in this case accessing the file using `mmap` (see Part II) might be simplest and quickest.
+Some binary files contain data structures which look very much like in-memory structures including pointers to other structures and so on. (Early versions of Microsoft Word looked like this.) Reading files like this can involve jumping around a lot within the file, and in this case accessing the file using `mmap` (see Part II) might be simplest and quickest.
 
 #### Block structured
 
@@ -68,7 +68,7 @@ Note that
 
 3. The length given in the length field does not include the chunk type and header length information. Thus the length is given as 6, whereas the header is actually 14 bytes long.
 
-A MIDI track is stored in a chunk, with each event in the track (often a not-on or note-off event, but there are other types) preceded by a variable-length integer indicating the delta time since the previous event.
+A MIDI track is stored in a chunk, with each event in the track (often a note-on or note-off event, but there are other types) preceded by a variable-length integer indicating the delta time since the previous event.
 
 Luis Uceta has recently [blogged](https://dev.to/uzluisf/dbase-parsing-a-binary-file-format-with-raku-2fm6) about using Raku to parse a dBase III file. Like a MIDI file, this is a streaming type file format.
 
